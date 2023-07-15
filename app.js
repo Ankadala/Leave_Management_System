@@ -14,6 +14,7 @@ var express = require("express"),
   Hod = require("./models/hod"),
   Leave = require("./models/leave");
 
+const e = require("connect-flash");
 var moment = require("moment");
 
 var url =process.env.DATABASEURL|| "mongodb://localhost/LeaveApp";
@@ -97,6 +98,7 @@ app.use((req, res, next) => {
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
+    // res.redirect("/student/home");
     return next();
   } else {
     req.flash("error", "You need to be logged in");
@@ -104,7 +106,19 @@ function ensureAuthenticated(req, res, next) {
   }
 }
 app.get("/", (req, res) => {
-  res.render("home");
+  if(req.isAuthenticated()){
+    console.log(req.user);
+    if(req.user.type === 'student')
+      res.redirect('student/home')
+    else if(req.user.type === 'hod')
+      res.redirect('student/hod')
+    else 
+      res.redirect('student/warden')
+  }
+  else
+  {
+    res.render("home");
+  }
 });
 
 //login logic for Student
@@ -363,7 +377,8 @@ app.post(
 
 app.get("/student/home", ensureAuthenticated, (req, res) => {
   var student = req.user.username;
-  console.log(student);
+  // console.log(req.user);
+  // console.log(student);
   Student.findOne({ username: req.user.username })
     .populate("leaves")
     .exec((err, student) => {
